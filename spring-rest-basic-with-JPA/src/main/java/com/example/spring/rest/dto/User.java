@@ -1,11 +1,17 @@
 package com.example.spring.rest.dto;
 
+import org.springframework.hateoas.RepresentationModel;
+
+import javax.validation.constraints.Past;
+import javax.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.Objects;
 
-public class User implements Comparable<User>{
+public class User extends RepresentationModel<User> implements Comparable<User>{
     private Integer id;
+    @Size(min = 3 ,message = "user name should have ateast 3 character")
     private String name;
+    @Past
     private LocalDate birthDate;
 
     public User(Integer id, String name, LocalDate birthDate) {

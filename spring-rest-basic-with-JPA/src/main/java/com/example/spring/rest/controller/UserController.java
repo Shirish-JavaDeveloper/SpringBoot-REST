@@ -4,10 +4,18 @@ import com.example.spring.rest.dao.UserService;
 import com.example.spring.rest.dto.Post;
 import com.example.spring.rest.dto.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.RepresentationModel;
+import org.springframework.hateoas.server.mvc.ControllerLinkBuilder;
+import org.springframework.hateoas.server.mvc.ControllerLinkRelationProvider;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import javax.validation.Valid;
 import java.net.URI;
 import java.util.List;
 
@@ -23,8 +31,21 @@ public class UserController {
     }
 
     @GetMapping(path = "/{id}")
-    public User retrieveUser(@PathVariable int id){
-        return service.findOne(id);
+    public RepresentationModel<User> retrieveUser(@PathVariable int id){
+        //return service.findOne(id);
+        //HATEOAS
+        User user = service.findOne(id);
+        Link allUserLink = WebMvcLinkBuilder
+                .linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).retrieveAllUsers())
+                .withRel("all-users");
+        Link selfLink = WebMvcLinkBuilder
+                .linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).retrieveUser(id))
+                .withRel("self");
+
+        boolean empty = user.getLinks().isEmpty();
+        user.addIf(empty, ()-> selfLink );
+        user.addIf(empty, ()-> allUserLink );
+        return user;
     }
 
     /**
@@ -32,7 +53,7 @@ public class UserController {
      * @return StatusCode created with the resource URI of newly created User
      */
     @PostMapping
-    public ResponseEntity createUser(@RequestBody User user){
+    public ResponseEntity createUser(@RequestBody @Valid User user){
         User savedUser = service.save(user);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
